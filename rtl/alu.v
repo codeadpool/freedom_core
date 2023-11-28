@@ -25,7 +25,7 @@ begin
         `SRA :  result = operand1 >>> operand2[4:0];
 
         `SLT :  result = $signed(operand1) < $signed(operand2) ? 32'b1 : 32'b0;
-        `SLTU: result = operand1 < operand2 ? 32'b1 : 32'b0;
+        `SLTU:  result = operand1 < operand2 ? 32'b1 : 32'b0;
 
         default: result = 32'b0; // or result
     endcase
