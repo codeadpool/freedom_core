@@ -1,27 +1,34 @@
 `include "defines.vh"
 
-module alu #(
-    parameter WORDSIZE = 32
-) (
-    input [WORDSIZE-1:0] in1, in2,  
-    input [3:0] ctl,              
-    output reg [WORDSIZE-1:0] result  
+module alu (
+    input [31:0] operand1, 
+    input [31:0] operand2, 
+    input [3:0]  operation, 
+    output reg [31:0] result,
+    output zero // need to check
 );
 
-    always @(*) begin
-        case (ctl)
-            `AND: result = in1 & in2;                         // Bitwise AND operation
-            `OR:  result = in1 | in2;                         // Bitwise OR operation
-            `ADD: result = in1 + in2;                         // Addition operation
-            `SUB: result = in1 - in2;                         // Subtraction operation
-            `SLL: result = in1 << in2[4:0];                   // Shift Left Logical (by in2[4:0] bits)
-            `SLT: result = $signed(in1) < $signed(in2);       // Set Less than Signed
-            `SLTU: result = $unsigned(in1) < $unsigned(in2);  // Set Less than Unsigned
-            `XOR: result = in1 ^ in2;                         // Bitwise XOR operation
-            `SRL: result = in1 >> in2[4:0];                   // Shift Right Logical (by in2[4:0] bits)
-            `SRA: result = $signed(in1) >> in2[4:0];          // Shift Right Arithmetic (by in2[4:0] bits)
-            default: result = result;                         // Default operation (no change to result)
-        endcase
-    end
+assign zero = (result == 32'b0); // Zero flag
+
+always @(operand1, operand2, operation)
+begin
+    case (operation)
+
+        `ADD :  result = operand1 + operand2;
+        `SUB :  result = operand1 - operand2;
+        `AND :  result = operand1 & operand2;
+        `OR  :  result = operand1 | operand2;
+        `XOR :  result = operand1 ^ operand2;
+
+        `SLL :  result = operand1 << operand2[4:0]; 
+        `SRL :  result = operand1 >> operand2[4:0];
+        `SRA :  result = operand1 >>> operand2[4:0];
+
+        `SLT :  result = $signed(operand1) < $signed(operand2) ? 32'b1 : 32'b0;
+        `SLTU: result = operand1 < operand2 ? 32'b1 : 32'b0;
+
+        default: result = 32'b0; // or result
+    endcase
+end
 
 endmodule
