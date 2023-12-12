@@ -34,6 +34,9 @@ always @(posedge clk) begin
                 default: ALUCtrl = 4'b0000; 
             endcase
         end
+        2'b11: begin
+            ALUCtrl = `OLUI
+        end
         default: ALUCtrl = 4'b0000; 
     endcase
 end

@@ -9,7 +9,7 @@
 `define SRA     4'b1101 
 `define SLT     4'b0010 
 `define SLTU    4'b0011 
-`define LUI_AL  4'b1010
+`define OLUI    4'b1010
 
 // Opcode defines
 `define LUI     7'b0110111 

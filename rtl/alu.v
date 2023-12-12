@@ -26,6 +26,8 @@ begin
 
         `SLT :  result = $signed(operand1) < $signed(operand2) ? 32'b1 : 32'b0;
         `SLTU:  result = operand1 < operand2 ? 32'b1 : 32'b0;
+        
+        `OLUI:  result = operand2;
 
         default: result = 32'b0; // or result
     endcase
