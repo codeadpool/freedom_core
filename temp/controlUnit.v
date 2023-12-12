@@ -1,23 +1,21 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
-// DNM = Does not matter
-
-module control_unit(
+module controlUnit(
     input wire clk, rst,
     input wire [31:0] instruction,
-    input wire Branch_out,
-    output reg [1:0] PCSelect, // For PC MUX
-    output reg Mem_PC,  // For PC_MEM_ALU Mux into regfile
-    output reg RegWrite, 
-    output reg IMemRead,
-    output reg DMemread,
-    output reg DMemWrite, 
-    output reg [2:0] branch_op,
-    output reg ALUSrcB,
-    output reg ALUSrcA,
-    output reg [1:0] ALUOp, 
-    output reg ALUout_Data_sel  // To choose between ALUout and DataMem out
+    input wire branchOut,
+    output reg [1:0] pcSelect, // For PC MUX
+    output reg memPC,  // For PC_MEM_ALU Mux into regfile
+    output reg regWrite, 
+    output reg iMemRead,
+    output reg dMemRead,
+    output reg dMemWrite, 
+    output reg [2:0] branchOp,
+    output reg aluSrcB,
+    output reg aluSrcA,
+    output reg [1:0] aluOp, 
+    output reg aluOutDataSel  // To choose between ALUout and DataMem out
 );
 
     reg [6:0] opcode;
@@ -39,112 +37,112 @@ module control_unit(
                      S13 = 4'b1101, // FENCE
                      S14 = 4'b1110; // SYSTEM && FENCE
 
-    reg [3:0] current_state, next_state;
+    reg [3:0] currentState, nextState;
 
     always @(posedge clk) begin
         if (rst) begin
-            current_state <= S0; 
+            currentState <= S0; 
         end else begin
-            current_state <= next_state;
+            currentState <= nextState;
         end
     end
 
     always @(posedge clk) begin
         opcode = instruction[6:0];
         func3 = instruction[14:12];
-        case (current_state)
+        case (currentState)
             S0 : begin      // Instruction Fetch 
-                PCSelect <= 2'b10; // Selects 0X010000000                
-                //DMemread <= 0; DNM
-                //DMemWrite <= 0; DNM
-                //ALUSrcA <= 0; // DNM
-                //ALUSrcB <= 2'b01; // DNM
-                //ALUOp <= 2'b00; // DNM
-                // DNM : Mem_PC, RegWrite, branch_op, ALUout_DATA_sel
-                next_state <= S1;
+                //pcSelect <= 2'b10; // Selects 0X010000000                
+                //dMemRead <= 0; DNM
+                //dMemWrite <= 0; DNM
+                //aluSrcA <= 0; // DNM
+                //aluSrcB <= 2'b01; // DNM
+                //aluOp <= 2'b00; // DNM
+                // DNM : memPC, regWrite, branchOp, aluOutDataSel
+                nextState <= S1;
             end
             S1 : begin      // Instruction decode/register fetch 
                 case (opcode)
-                    `LOAD, `STORE : next_state = S2; // Done
-                    `ART, `IMM : next_state = S6; // Done
-                    `BRANCH : next_state = S8; // Done
-                    `SYSTEM : next_state = S14; // done
-                    `JAL, `JALR : next_state = S10; // Half done
-                    `FENCE : next_state = S13;  // 
-                    `AUIPC : next_state = S11; // done
-                    `LUI : next_state = S12; // done
-                    default : next_state = S0;
+                    `LOAD, `STORE : nextState = S2; // Done
+                    `ART, `IMM : nextState = S6; // Done
+                    `BRANCH : nextState = S8; // Done
+                    `SYSTEM : nextState = S14; // done
+                    `JAL, `JALR : nextState = S10; // Half done
+                    `FENCE : nextState = S13;  // 
+                    `AUIPC : nextState = S11; // done
+                    `LUI : nextState = S12; // done
+                    default : nextState = S0;
                 endcase
             end
             S2 : begin      // Memory address computation
-                ALUSrcA <= 1;
-                ALUSrcB <= 1; 
-                ALUOp <= 2'b00; // Addition is happening here
+                aluSrcA <= 1;
+                aluSrcB <= 1; 
+                aluOp <= 2'b00; // Addition is happening here
                 case (opcode)
-                    `LOAD  :    next_state = S3;
-                    `STORE :    next_state = S5; 
+                    `LOAD  :    nextState = S3;
+                    `STORE :    nextState = S5; 
                 endcase
             end
             S3 : begin      // Load - Not sure if this requires 1 cycle or 2 cycles.
-                DMemread <= 1;
-                ALUout_Data_sel <= 1; // since data_out
-                next_state <= S4;
+                dMemRead <= 1;
+                aluOutDataSel <= 1; // since data_out
+                nextState <= S4;
             end
             S4 : begin      // Memory read completion step 
-                RegWrite <= 1;
-                Mem_PC <= 1; // since data_out
-                PCSelect <= 1; // since PC + 4
-                next_state <= S0; // Load complete
+                regWrite <= 1;
+                memPC <= 1; // since data_out
+                pcSelect <= 1; // since PC + 4
+                nextState <= S0; // Load complete
             end
             S5 : begin      // Memory access
-                DMemWrite <= 1;
-                PCSelect <= 1; // since PC + 4
-                next_state <= S0; // Store complete
+                dMemWrite <= 1;
+                pcSelect <= 1; // since PC + 4
+                nextState <= S0; // Store complete
             end
             S6 : begin      // `ART & `IMM Execution 
-                ALUSrcA <= 1;
-                ALUOp <= 2'b10;
+                aluSrcA <= 1;
+                aluOp <= 2'b10;
                 case(opcode) // $changed here
-                    `ART : ALUSrcB = 0;
-                    `IMM : ALUSRCB = 1; 
+                    `ART : aluSrcB = 0;
+                    `IMM : aluSrcB = 1; 
                 endcase
-                next_state <= S7;
+                nextState <= S7;
             end
             S7 : begin      // `ART AND `IMM completion - Specific `ART & `IMM type operations will be handled by the Alucontrol module
-                RegWrite <= 1;
-                ALUout_Data_sel <= 0; // Since ALUout
-                Mem_PC <= 1; // Since ALUout
-                PCSelect <= 1; // Implying that PC+4 is given to PC before reaching S0
-                next_state <= S0;
+                regWrite <= 1;
+                aluOutDataSel <= 0; // Since ALUout
+                memPC <= 1; // Since ALUout
+                pcSelect <= 1; // Implying that PC+4 is given to PC before reaching S0
+                nextState <= S0;
             end
             S8 : begin      // Branch stage 1
-                branch_op <= func3;
-                ALUSrcA <= 0; // since PC
-                ALUSrcB <= 1; // since sign_ext_IMM
-                ALUOp <= 2'b00; 
-                next_state <= S9; // assign a new state number for next state
+                branchOp <= func3;
+                aluSrcA <= 0; // since PC
+                aluSrcB <= 1; // since sign_ext_IMM
+                aluOp <= 2'b00; 
+                nextState <= S9; // assign a new state number for next state
             end 
             S9 : begin  // Branch stage 2 completion
-                if(Branch_out) PCSelect <= 0;
-                else PCSelect <= 1;
-                next_state = S0;
+                if(branchOut) pcSelect <= 0;
+                else pcSelect <= 1;
+                nextState = S0;
             end
             S10 : begin      // JAL, JALR
-                Mem_PC <= 0; // since PC+4 
-                RegWrite <= 1;
-                ALUOp <= 2'b00;
+                memPC <= 0; // since PC+4 
+                regWrite <= 1;
+                aluOp <= 2'b00;
                 case(opcode) // $changed here
                     `JAL : begin
-                        ALUSrcA <= 0; // since PC
-                        ALUSrcB <= 1;
-                        PCSelect <= 0; // since ALUout
-                        next_state <= S10;
+                        aluSrcA <= 0; // since PC
+                        aluSrcB <= 1;
+                        pcSelect <= 0; // since ALUout
+                        nextState <= S10;
                     end
                     `JALR : begin 
-                        ALUSrcA <= 1; // since rs1
-                        ALUSrcB <= 1;
-                        PCSelect <= 0; // since ALUout
-                        next_state <= S10;
+                        aluSrcA <= 1; // since rs1
+                        aluSrcB <= 1;
+                        pcSelect <= 0; // since ALUout
+                        nextState <= S10;
                     end
                 endcase 
             end 
@@ -155,35 +153,35 @@ module control_unit(
 
                         // end 
             S11 : begin     // AUIPC // May need to use ALU to execute the {imm[31:12],12[0]}
-                ALUSrcA <= 0;
-                ALUSrcB <= 1;
-                ALUOp <= 2'b00; // Mostly 2'b11; But will confirm
+                aluSrcA <= 0;
+                aluSrcB <= 1;
+                aluOp <= 2'b00; // Mostly 2'b11; But will confirm
 
                 //========================== new state ==========================
 
-                ALUout_DATA_sel <= 0; // since aluout
-                Mem_PC <= 1; // since aluout
-                RegWrite <= 1;
-                next_state <= S0; 
+                aluOutDataSel <= 0; // since aluout
+                memPC <= 1; // since aluout
+                regWrite <= 1;
+                nextState <= S0; 
             end    
             S12 : begin     // LUI
-                ALUSrcB <= 1; // immediate, and ALUsrcA doens't matter
-                ALUOp <= 11; 
-                ALUout_DATA_sel <= 0; // since aluout
-                Mem_PC <= 1; // since aluout
-                RegWrite <= 1;
-                next_state <= S0;
+                aluSrcB <= 1; // immediate, and aluSrcA doesn't matter
+                aluOp <= 11; 
+                aluOutDataSel <= 0; // since aluout
+                memPC <= 1; // since aluout
+                regWrite <= 1;
+                nextState <= S0;
             end
             S13 : begin     // FENCE
-                ALUOp <= 2'b00;
-                RegWrite <= 1;
-                next_state <= S0;
+                aluOp <= 2'b00;
+                regWrite <= 1;
+                nextState <= S0;
             end
             S14 : begin 
                 //Do nothing
             end
-            default : next_state = S0;    
+            default : nextState = S0;    
         endcase
-    end
+    end
 
 endmodule
