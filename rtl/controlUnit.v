@@ -1,96 +1,101 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
-module control_unit(
-    input clk, rst,
-    input [31:0] instruction,
-    output reg PCWriteCond,
-    output reg PCWrite,   
-    output reg RegWrite,
-    output reg MemRead,
-    output reg MemWrite, 
-    output reg IRWrite,
-    output reg MemtoReg,
-    output reg IorD, 
-    output reg [1:0] ALUSrcB,
-    output reg ALUSrcA,
-    output reg [1:0] PCSource,
-    output reg [1:0] ALUOp  // This signal will be used by alucontrol module
+module controlUnit(
+    input wire clk, rst,
+    input wire [6:0] opCode,
+    input wire [2:0] funct3,
+    input wire branchOut,
+    output reg iMemRead,
+    output reg [1:0] pcSelect,
+    output reg memPC,
+    output reg regWrite, 
+    output reg dMemRead,
+    output reg dMemWrite, 
+    output reg [3:0] dMemByteRead,
+    output reg [3:0] dMemByteWrite,
+    output reg [2:0] branchOp,
+    output reg aluSrcB,
+    output reg aluSrcA,
+    output reg [1:0] aluOp, 
+    output reg aluOutDataSel,
+    output reg [3:0] cstate
 );
 
-    reg [6:0] opcode;
-      
-    localparam [3:0] FETCH             = 4'b0000,
-                     DECODE            = 4'b0001,
-                     EXECUTE           = 4'b0010,
-                     MEM_ACCESS        = 4'b0011,
-                     WRITE_BACK        = 4'b0100,
-                     BRANCH_COMPLETE   = 4'b0101,
-                     HALT              = 4'b0110;
+    localparam [3:0] S0 = 4'b0000, S1 = 4'b0001, S2 = 4'b0010, S3 = 4'b0011, S4 = 4'b0100, 
+                      S5 = 4'b0101, S6 = 4'b0110, S7 = 4'b0111, S8 = 4'b1000, S9 = 4'b1001, 
+                      S10 = 4'b1010, S11 = 4'b1011, S12 = 4'b1100, S13 = 4'b1101, S14 = 4'b1110;
 
-    reg [3:0] current_state, next_state;
+    reg [3:0] currentState, nextState;
 
-    always @(posedge clk) begin
-        if (rst) begin
-            current_state <= FETCH;
-        end else begin
-            current_state <= next_state;
-        end
+    always @(posedge clk) begin 
+        if (rst) 
+            currentState <= S0;
+        else 
+            currentState <= nextState;
     end
 
     always @(*) begin
-        opcode = instruction[6:0];
-        
-        case (current_state)
-            FETCH: next_state = DECODE;
-            DECODE: begin
-                case (opcode)
-                    `LUI, `AUIPC, `JAL, `JALR, `IMM, `ART: next_state = EXECUTE;
-                    `BRANCH: next_state = BRANCH_COMPLETE;
-                    `LOAD, `STORE: next_state = MEM_ACCESS;
-                    `SYSTEM: next_state = HALT;
-                    default: next_state = FETCH;
-                endcase
+//        iMemRead = 0; pcSelect = 2'b00; memPC = 0; regWrite = 0;
+//        dMemRead = 0; dMemWrite = 0; branchOp = 3'b000; aluSrcB = 0;
+//        aluSrcA = 0; aluOp = 2'b00; aluOutDataSel = 0; c
+        cstate = currentState;
+
+        case (currentState)
+            S0: begin 
+                nextState = S1; iMemRead = 1; pcSelect = 2'b10;
             end
-            EXECUTE: begin
-                case (opcode)
-                    `LUI, `AUIPC: begin
-                        ALUSrcA = (opcode == `AUIPC) ? 1 : 0; ALUSrcB = 2'b10;
-                        ALUOp = (opcode == `AUIPC) ? 2'b00 : 2'b11; RegWrite = 1;
-                    end
-                    `JAL, `JALR: begin
-                        ALUSrcA = 1; ALUOp = 2'b00; PCWrite = 1; RegWrite = 1;
-                        PCSource = (opcode == `JAL) ? 2'b10 : 2'b11;
-                    end
-                    `BRANCH: begin
-                        ALUSrcA = 0; ALUOp = 2'b01; PCWriteCond = 1; PCSource = 2'b01;
-                    end
-                    `LOAD, `STORE: begin
-                        ALUSrcA = 1; ALUSrcB = 2'b10; ALUOp = 2'b00;
-                        MemWrite = (opcode == `STORE) ? 1 : 0; MemRead = (opcode == `LOAD) ? 1 : 0;
-                    end
-                    `IMM: begin
-                        ALUSrcA = 1; ALUSrcB = 2'b10; ALUOp = 2'b10; RegWrite = 1;
-                    end
-                    `ART: begin
-                        ALUSrcA = 1; ALUSrcB = 2'b00; ALUOp = 2'b10; RegWrite = 1;
-                        // Specific R-type operations will be handled by the alucontrol module
-                    end
-                endcase
+            S1: begin
+                nextState = (opCode == `LOAD || opCode == `STORE) ? S2 : 
+                            (opCode == `ART || opCode == `IMM) ? S6 : 
+                            (opCode == `BRANCH) ? S8 : 
+                            (opCode == `SYSTEM) ? S14 : 
+                            (opCode == `JAL || opCode == `JALR) ? S10 : 
+                            (opCode == `FENCE) ? S13 : 
+                            (opCode == `AUIPC || opCode == `LUI) ? S11 : S0;
             end
-            MEM_ACCESS: begin
-                MemtoReg = (opcode == `LOAD) ? 1 : 0; RegWrite = (opcode == `LOAD) ? 1 : 0;
-                IorD = 1; // Set IorD for memory access
+            S2: begin 
+                aluSrcA = 1; aluSrcB = 1; aluOp = 2'b00;
+                nextState = (opCode == `LOAD) ? S3 : (opCode == `STORE) ? S5 : S0;
             end
-            WRITE_BACK: begin
-                RegWrite = 1; MemtoReg = 1;
+            S3: begin
+                dMemRead = 1; aluOutDataSel = 1; nextState = S4;
             end
-            BRANCH_COMPLETE: begin
-                PCWriteCond = 1; PCSource = 2'b01;
+            S4: begin
+                regWrite = 1; memPC = 1; pcSelect = 2'b01; nextState = S0;
             end
-            HALT: next_state = HALT;
-            default: next_state = FETCH;
+            S5: begin
+                dMemWrite = 1; pcSelect = 2'b01; nextState = S0;
+            end
+            S6: begin
+                aluSrcA = 1; aluOp = 2'b10; aluSrcB = (opCode == `ART) ? 0 : 1; nextState = S7;
+            end
+            S7: begin
+                regWrite = 1; aluOutDataSel = 0; memPC = 1; pcSelect = 2'b01; nextState = S0;
+            end
+            S8: begin
+                branchOp = funct3; aluSrcA = 1; aluSrcB = 1; aluOp = 2'b00; nextState = S9;
+            end
+            S9: begin
+                pcSelect = branchOut ? 2'b00 : 2'b01; nextState = S0;
+            end
+            S10: begin
+                memPC = 0; regWrite = 1; aluOp = 2'b00; 
+                aluSrcA = (opCode == `JALR) ? 1 : 0; aluSrcB = 1; pcSelect = 2'b00; nextState = S0;
+            end
+            S11: begin
+                aluSrcA = 0; aluSrcB = 1; aluOp = (opCode == `LUI) ? 2'b11 : 2'b00; nextState = S12;
+            end
+            S12: begin
+                aluOutDataSel = 0; memPC = 1; regWrite = 1; nextState = S0;
+            end
+            S13: begin
+                aluOp = 2'b00; regWrite = 1; nextState = S0;
+            end
+            S14: begin
+            end
+            default : nextState = 0;
         endcase
     end
-
 endmodule
+               

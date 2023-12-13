@@ -1,9 +1,9 @@
 `timescale 1ns / 1ps
 
 module instructionMemory(
-    input wire clk, read_enable,
+    input wire clk, readEnable,
     input wire [31:0] address,
-    output reg [31:0] instruction_address
+    output reg [31:0] instruction
 );
 
     localparam MEM_SIZE = 1024; 
@@ -18,14 +18,14 @@ module instructionMemory(
     end
     
     always @(posedge clk) begin
-        if (read_enable) begin
+        if (readEnable) begin
             if (address >= BASE_ADDRESS && address < BASE_ADDRESS + (MEM_SIZE << 2)) begin
-                instruction_address = memory_array[(address - BASE_ADDRESS) >> 2];
+                instruction <= memory_array[(address - BASE_ADDRESS) >> 2];
             end else begin
-                instruction_address = NOP_INSTRUCTION; // for now
+                instruction <= NOP_INSTRUCTION; // for now
             end
         end else begin
-            instruction_address = NOP_INSTRUCTION;
+            instruction = NOP_INSTRUCTION;
         end
     end
 endmodule

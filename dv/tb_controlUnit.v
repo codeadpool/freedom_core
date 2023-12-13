@@ -7,6 +7,10 @@ module tb_controlUnit;
    reg [31:0] instruction;
    reg branchOut;
    
+   wire iMemRead;
+   wire [6:0] opCode;
+   wire [2:0] funct3;
+
    wire memPC, regWrite,
         dMemRead, dMemWrite, 
         aluSrcA, aluSrcB, aluOutDataSel;
@@ -20,7 +24,9 @@ module tb_controlUnit;
    controlUnit dut (
         .clk(clk),
         .rst(rst),
-        .instruction(instruction),
+        .opCode(opCode),
+        .funct3(funct3),
+        .iMemRead(iMemRead),
         .branchOut(branchOut),
         .memPC(memPC),
         .regWrite(regWrite),
