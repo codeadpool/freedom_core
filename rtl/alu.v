@@ -4,13 +4,12 @@ module alu (
     input [31:0] operand1, 
     input [31:0] operand2, 
     input [3:0]  operation, 
-    output reg [31:0] result,
-    output zero // need to check
+    output reg [31:0] result
 );
 
-assign zero = (result == 32'b0); // Zero flag
+//assign zero = (result == 32'b0); // Zero flag
 
-always @(operand1, operand2, operation)
+always @(*)
 begin
     case (operation)
 

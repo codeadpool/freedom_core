@@ -2,17 +2,14 @@
 module registerFile (
 
     input clk,
-    input reset, 
-    input write_enable,
-
-    input [4:0] read_reg1,
-    input [4:0] read_reg2,
-
-    input [4:0] write_reg,
-    input [31:0] write_data,
-
-    output  [31:0] read_data1,
-    output  [31:0] read_data2
+    input rst, 
+    input writeEnable,
+    input [4:0] readReg1,
+    input [4:0] readReg2,
+    input [4:0] writeReg,
+    input [31:0] writeData,
+    output  [31:0] readData1,
+    output  [31:0] readData2
 );
 
 integer i;
@@ -24,16 +21,16 @@ initial begin
 end
 
 // hardwried reg0 to 0
-assign read_data1 = (read_reg1 != 0) ? cpu_registers[read_reg1] : 32'b0;
-assign read_data2 = (read_reg2 != 0) ? cpu_registers[read_reg2] : 32'b0;
+assign readData1 = (readReg1 != 0) ? cpu_registers[readReg1] : 32'b0;
+assign readData2 = (readReg2 != 0) ? cpu_registers[readReg2] : 32'b0;
 
 always @(posedge clk) begin
-    if (reset) begin   
+    if (rst) begin   
         for (i = 1; i < 32; i = i + 1) begin
             cpu_registers[i] <= 32'b0;
         end
-    end else if (write_enable && write_reg != 5'b0) begin
-        cpu_registers[write_reg] <= write_data;
+    end else if (writeEnable && writeReg != 5'b0) begin
+        cpu_registers[writeReg] <= writeData;
     end
 end
 

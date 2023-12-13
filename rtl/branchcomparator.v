@@ -2,20 +2,21 @@
 `include "defines.vh"
 
 module branchComparator(
-    input wire [31:0] data_in1, data_in2,
-    input wire [2:0] opcode,
-    output reg branch_out
+//    input wire clk,
+    input wire [31:0] dataIn1, dataIn2,
+    input wire [2:0] opCode,
+    output reg branchOut
     );
  
     always@(*) begin
-        case(opcode)
-            `BEQ    : branch_out = (data_in1==data_in2) ? 1:0;
-            `BNE    : branch_out = (data_in1!=data_in2) ? 1:0;
-            `BLT    : branch_out = ($signed(data_in1) < $signed(data_in2)) ? 1:0;
-            `BGE    : branch_out = ($signed(data_in1) >= $signed(data_in2)) ? 1:0;
-            `BLTU   : branch_out = (data_in1 < data_in2)? 1:0;
-            `BGEU   : branch_out = (data_in1 >= data_in2)? 1:0;
-             default: branch_out = 1'b0; 
+        case(opCode)
+            `BEQ    : branchOut = (dataIn1 == dataIn2) ? 1:0;
+            `BNE    : branchOut = (dataIn1 != dataIn2) ? 1:0;
+            `BLT    : branchOut = ($signed(dataIn1) < $signed(dataIn2)) ? 1:0;
+            `BGE    : branchOut = ($signed(dataIn1) >= $signed(dataIn2)) ? 1:0;
+            `BLTU   : branchOut = (dataIn1 < dataIn2)? 1:0;
+            `BGEU   : branchOut = (dataIn1 >= dataIn2)? 1:0;
+             default: branchOut = 1'b0; 
         endcase
     end
  
