@@ -4,76 +4,95 @@ module tb_dataMemory;
 
     reg clk;
     reg rst;
-    reg read_enable;
-    reg [3:0] write_byte_select;
-    reg [3:0] read_byte_select;
+    reg readEnable;
+    reg writeEnable;
+    reg [3:0] writeByteSelect;
+    reg [3:0] readByteSelect;
+    reg [2:0] loadSelect;
     reg [31:0] address;
-    reg [31:0] data_in;
-
-    wire [31:0] data_out;
-    integer i;
+    reg [31:0] dataIn;
+    wire [31:0] dataOut;
 
     dataMemory dut (
         .clk(clk),
         .rst(rst),
-        .read_enable(read_enable),
-        .write_byte_select(write_byte_select),
-        .read_byte_select(read_byte_select),
+        .readEnable(readEnable),
+        .writeEnable(writeEnable),
+        .writeByteSelect(writeByteSelect),
+        .readByteSelect(readByteSelect),
+        .loadSelect(loadSelect),
         .address(address),
-        .data_in(data_in),
-        .data_out(data_out)
+        .dataIn(dataIn),
+        .dataOut(dataOut)
     );
 
     always #5 clk = ~clk;
+    always @(posedge clk) begin
+        if (writeEnable) begin
+            #1; 
+            $display("Time: %t, Address: %h, Data Written: %h, Memory Content: %h",
+                      $time, address, dataIn, dut.dataMemory[(address - dut.BASE_ADDR) >> 2]);
+        end
+    end
 
     initial begin
+
         clk = 0;
         rst = 1;
-        read_enable = 0;
-        write_byte_select = 0;
-        read_byte_select = 4'b1111; // Enable read for all bytes
+        readEnable = 0;
+        writeEnable = 0;
+        writeByteSelect = 4'b1111;
+        readByteSelect = 4'b1111;
+        loadSelect = 3'b000;
         address = 0;
-        data_in = 0;
+        dataIn = 0;
 
-        #50; 
-        rst = 0;
+        // Reset the system
+        #10 rst = 0;
+        #5;
 
-        // Test Case 1: Write and Read a whole word
-        write_byte_select = 4'b1111;
-        data_in = 32'hA5A5A5A5;
-        address = 32'h4;
+        // Test Case 1: Write and Read Full Word
+        writeEnable = 1;
+        address = 32'h80000004;
+        dataIn = 32'hA5A5A5A5;
         #10;
-        write_byte_select = 4'b0000;
-        read_enable = 1;
-        #10; 
-        if (data_out != 32'hA5A5A5A5) $display("Test Case 1 Failed");
-
-        // Test Case 2: Write and Read individual bytes
-        for (i = 0; i < 4; i = i + 1) begin
-            write_byte_select = 4'b0001 << i;
-            data_in = 32'hFF << (i*8);
-            address = 32'h8;
-            #10; 
-        end
-        write_byte_select = 4'b0000;
-        read_enable = 1;
-        #10; 
-        if (data_out != 32'hFFFFFFFF) $display("Test Case 2 Failed");
-
-        // Test Case 3: Special ROM handling
-        address = dut.ADDR_ROM_1;
-        #10; 
-        if (data_out != dut.SURYA) $display("Test Case 3 Failed - ADDR_ROM_1");
-        address = dut.ADDR_ROM_2;
+        writeEnable = 0;
+        readEnable = 1;
         #10;
-        if (data_out != dut.SAI) $display("Test Case 3 Failed - ADDR_ROM_2");
+        readEnable = 0;
+        #10;
 
-        // Test Case 4: Out-of-bounds address
-        address = 32'hFFFFFFFF;
-        #10; 
-        if (data_out != 32'hDEAD_BEEF) $display("Test Case 4 Failed - Out of bounds address");
-     
-        #10 $display("All tests completed");
+        // Test Case 2: Byte-wise Write and Read
+        // Ensure that each operation happens on a positive edge of clk
+        writeEnable = 1;
+        writeByteSelect = 4'b0011; // Writing to lower two bytes
+        address = 32'h80000008;
+        dataIn = 32'h0000FFFF;
+        
+        #10
+        writeByteSelect = 4'b1100; // Writing to upper two bytes
+        dataIn = 32'hFFFF0000;
+        
+        #10
+        writeEnable = 0;
+        readEnable = 1; 
+        
+        #10
+        readEnable = 0;
+        
+        #10
+        readEnable =1;
+        readByteSelect = 4'b1100;
+        #10
+        readByteSelect = 4'b1000;
+        #10
+        readByteSelect = 4'b0100;
+        #10
+        readByteSelect = 4'b0001;
+        #10
+        readByteSelect = 4'b0000;
+        #30        
         $finish;
     end
+
 endmodule

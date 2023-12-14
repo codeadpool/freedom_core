@@ -11,12 +11,13 @@ module processorWrapper(
     output wire [3:0] cstate,
     output wire [1:0] pcSelect,
     output wire [6:0] opCode,
-    output wire decodeEnable,
     output wire [4:0] rs1, rs2, rd,
     output wire branchOut,
     output wire halt,
     output wire [31:0] aluResult,
-    output wire [31:0] aluDataIn1, aluDataIn2
+    output wire [31:0] aluDataIn1, aluDataIn2,
+    output wire [31:0] readData1, readData2,
+    output wire aluSrcA, aluSrcB
 );
     // Interconnect wires    
     // pc
@@ -101,7 +102,6 @@ module processorWrapper(
         .rst            (rst),
         .funct3         (funct3),
         .opCode         (opCode),
-//        .decodeEnable   (decodeEnable),
         .iMemRead       (iMemRead),
         .branchOut      (branchOut),
         .pcSelect       (pcSelect),
@@ -122,7 +122,7 @@ module processorWrapper(
     );
     
     aluControl ac(
-        .clk            (clk),
+//        .clk            (clk),
         .aluOp          (aluOp),
         .funct7         (funct7),
         .funct3         (funct3),
@@ -149,9 +149,11 @@ module processorWrapper(
         .branchOut      (branchOut)
     );
     
-    assign aluDataIn1 = (aluSrcA) ? readData1 : pc;     // alu A mux
+    assign aluDataIn1 = (aluSrcA) ? readData1 : pc;     // alu A mux 
     assign aluDataIn2 = (aluSrcB) ? imm  : readData2;   // alu B mux
- 
+//    assign aluDataIn1 = (aluSrcA == 1) ? readData1 :(aluSrcA == 0) ? pc : readData1;
+//    assign aluDataIn2 = (aluSrcB == 1) ? imm :(aluSrcB == 0) ? readData2 : readData2;
+
     alu al(
         .operand1       (aluDataIn1),
         .operand2       (aluDataIn2),
@@ -162,19 +164,20 @@ module processorWrapper(
     dataMemory dmem(
         .clk            (clk),
         .rst            (rst),
-        .readEnable     (iMemRead),
-        .writeEnable    (iMemWrite),
+        .readEnable     (dMemRead),
+        .writeEnable    (dMemWrite),
         .readByteSelect (dMemByteRead),
         .writeByteSelect(dMemByteWrite),
         .loadSelect     (funct3),
         .address        (aluResult),
-        .dataIn         (rs2), // regB
+        .dataIn         (readData2), // regB
         .dataOut        (dMemOut)   
     );
     
-    assign dataAluMux   = (aluOutDataSel) ? dMemOut : aluResult; // data or aluResult MUX
-    assign regwriteData = (memPC) ? dataAluMux : incPC;
-    
+    assign dataAluMux   = (aluOutDataSel) ? dMemOut : aluResult; // data or aluResult MUX   
+    assign regWriteData = (memPC) ? dataAluMux : incPC;
+//    assign dataAluMux = (aluOutDataSel == 1) ? dMemOut :(aluOutDataSel == 0) ? aluResult : aluResult;
+//    assign regwriteData = (memPC == 1) ? dataAluMux :(memPC == 0) ? incPC : dataAluMux;
     
 endmodule
 
