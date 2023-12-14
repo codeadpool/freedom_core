@@ -2,14 +2,14 @@
 `include "defines.vh"
 
 module aluControl(
-    input clk,
+//    input clk,
     input [1:0] aluOp,
     input [6:0] funct7,
     input [2:0] funct3,
     output reg [3:0] aluCtl
 );
 
-always @(posedge clk) begin
+always @(*) begin
     case(aluOp)
         2'b00: begin    
             aluCtl = `ADD; // For load/store instructions

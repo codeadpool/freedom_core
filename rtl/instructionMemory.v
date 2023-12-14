@@ -19,7 +19,7 @@ module instructionMemory(
     
     always @(posedge clk) begin
         if (readEnable) begin
-            if (address >= BASE_ADDRESS && address < BASE_ADDRESS + (MEM_SIZE << 2)) begin
+            if ((address >= BASE_ADDRESS) && (address < BASE_ADDRESS + (MEM_SIZE << 2)) && (address[1:0] == 0)) begin
                 instruction <= memory_array[(address - BASE_ADDRESS) >> 2];
             end else begin
                 instruction <= NOP_INSTRUCTION; // for now
