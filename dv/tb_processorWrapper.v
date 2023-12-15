@@ -7,7 +7,6 @@ module tb_processorWrapper;
     wire [3:0] cstate;
     wire [1:0] pcSelect;
     wire [6:0] opCode;
-//    wire decodeEnable;
     wire [4:0] rs1, rs2, rd;
     wire branchOut;
     wire [31:0] aluResult;
@@ -18,7 +17,6 @@ module tb_processorWrapper;
         .clk(clk),
         .rst(rst),
         .pc(pc),
-//        .decodeEnable(decodeEnable),
         .instruction(instruction),
         .iMemRead(iMemRead),
         .cstate(cstate),
