@@ -3,7 +3,6 @@
 
 module decoder(
     input wire [31:0] instruction,
-    //input wire clk,
     output reg [6:0] opCode,
     output reg [4:0] rs1,
     output reg [4:0] rs2,
@@ -16,8 +15,7 @@ module decoder(
         opCode = instruction[6:0];
         funct3 = instruction[14:12];
         funct7 = instruction[31:25];
-        
-        // Set rs1, rs2, rd, and imm based on opcode
+    
         case (opCode)
             `LUI, `AUIPC: begin
                 imm = {instruction[31:12], 12'b0};
@@ -44,7 +42,7 @@ module decoder(
                 rd = 5'b0;
             end
             `BRANCH: begin
-                imm = {{19{instruction[31]}}, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0};
+                imm = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
                 rs1 = instruction[19:15];
                 rs2 = instruction[24:20];
                 rd = 5'b0;

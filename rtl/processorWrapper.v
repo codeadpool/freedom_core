@@ -85,9 +85,7 @@ module processorWrapper(
     );
 
     decoder decodeModule(
-        .instruction    (instruction),
-//        .clk            (clk),
-//        .decodeEnable   (decodeEnable),
+        .instruction    (instruction),,
         .opCode         (opCode),
         .rs1            (rs1),
         .rs2            (rs2),
@@ -122,7 +120,6 @@ module processorWrapper(
     );
     
     aluControl ac(
-//        .clk            (clk),
         .aluOp          (aluOp),
         .funct7         (funct7),
         .funct3         (funct3),
@@ -141,8 +138,7 @@ module processorWrapper(
         .readData2      (readData2)
     );
     
-    branchComparator bc( // always *
-//        .clk(clk),
+    branchComparator bc( 
         .dataIn1        (readData1), // rega and regb
         .dataIn2        (readData2),
         .opCode         (branchOp),
@@ -151,8 +147,6 @@ module processorWrapper(
     
     assign aluDataIn1 = (aluSrcA) ? readData1 : pc;     // alu A mux 
     assign aluDataIn2 = (aluSrcB) ? imm  : readData2;   // alu B mux
-//    assign aluDataIn1 = (aluSrcA == 1) ? readData1 :(aluSrcA == 0) ? pc : readData1;
-//    assign aluDataIn2 = (aluSrcB == 1) ? imm :(aluSrcB == 0) ? readData2 : readData2;
 
     alu al(
         .operand1       (aluDataIn1),
@@ -176,8 +170,6 @@ module processorWrapper(
     
     assign dataAluMux   = (aluOutDataSel) ? dMemOut : aluResult; // data or aluResult MUX   
     assign regWriteData = (memPC) ? dataAluMux : incPC;
-//    assign dataAluMux = (aluOutDataSel == 1) ? dMemOut :(aluOutDataSel == 0) ? aluResult : aluResult;
-//    assign regwriteData = (memPC == 1) ? dataAluMux :(memPC == 0) ? incPC : dataAluMux;
     
 endmodule
 

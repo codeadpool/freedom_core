@@ -2,7 +2,6 @@
 `include "defines.vh"
 
 module aluControl(
-//    input clk,
     input [1:0] aluOp,
     input [6:0] funct7,
     input [2:0] funct3,

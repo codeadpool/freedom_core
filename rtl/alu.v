@@ -7,8 +7,6 @@ module alu (
     output reg [31:0] result
 );
 
-//assign zero = (result == 32'b0); // Zero flag
-
 always @(*)
 begin
     case (operation)

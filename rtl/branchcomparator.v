@@ -2,7 +2,6 @@
 `include "defines.vh"
 
 module branchComparator(
-//    input wire clk,
     input wire [31:0] dataIn1, dataIn2,
     input wire [2:0] opCode,
     output reg branchOut
