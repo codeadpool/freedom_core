@@ -27,7 +27,6 @@ module dataMemory(
     reg [31:0] specialRom [0:1];
 
     initial begin
-        $readmemh("dataMemory.mem", dataMemory);
         specialRom[0] = SURYA;
         specialRom[1] = SAI;
     end
@@ -35,18 +34,17 @@ module dataMemory(
     integer i;
     always @(posedge clk) begin
         if (rst) begin
-            for (i = 0; i < MEM_SIZE; i = i + 1) begin
-                dataMemory[i] <= 32'b0;
-            end
         end else begin
             if (readEnable) begin
                 case (address)
                     ADDR_ROM_1: dataOut <= specialRom[0];
                     ADDR_ROM_2: dataOut <= specialRom[1];
                     default: if (address >= BASE_ADDR && address < BASE_ADDR + (MEM_SIZE << 2)) begin
+                                // Adjusted memory addressing
                                 if (readByteSelect == 4'b1111) begin
                                     dataOut <= dataMemory[(address - BASE_ADDR) >> 2];
                                 end else begin
+                                    // Byte-wise read handling
                                     dataOut <= 32'h0;
                                     if (readByteSelect[0]) dataOut[7:0]   <= dataMemory[(address - BASE_ADDR) >> 2][7:0];
                                     if (readByteSelect[1]) dataOut[15:8]  <= dataMemory[(address - BASE_ADDR) >> 2][15:8];
@@ -54,12 +52,13 @@ module dataMemory(
                                     if (readByteSelect[3]) dataOut[31:24] <= dataMemory[(address - BASE_ADDR) >> 2][31:24];
                                 end
                              end else 
-                                dataOut <= 32'hDEAD_BEEF; 
+                                dataOut <= 32'hDEAD_BEEF; // Error code for invalid read
                 endcase
             end
 
             if (writeEnable) begin
                 if (address >= BASE_ADDR && address < BASE_ADDR + (MEM_SIZE << 2)) begin
+                    // Adjusted memory addressing for writing
                     if(writeByteSelect == 4'b1111) begin
                         dataMemory[(address - BASE_ADDR) >> 2] <= dataIn;
                     end else begin

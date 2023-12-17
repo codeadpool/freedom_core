@@ -7,27 +7,13 @@ module processorWrapper(
     
     output wire [31:0] pc,
     output wire [31:0] instruction,
-    output wire iMemRead,
-    output wire [3:0] cstate,
-    output wire [1:0] pcSelect,
-    output wire [6:0] opCode,
-    output wire [4:0] rs1, rs2, rd,
-    output wire branchOut,
-    output wire halt,
-    output wire [31:0] aluResult,
-    output wire [31:0] aluDataIn1, aluDataIn2,
-    output wire [31:0] readData1, readData2,
-    output wire aluSrcA, aluSrcB
+    output wire [3:0] cstate
 );
     // Interconnect wires    
     // pc
-    wire [31:0] pc;
     wire [31:0] incPC;
     wire halt; 
-       
-    //imem
-    wire [31:0] instruction;
-    
+          
     // decode
     wire [6:0] opCode;
     wire [4:0] rs1, rs2, rd;
@@ -42,15 +28,12 @@ module processorWrapper(
     wire [3:0] dMemByteRead, dMemByteWrite;
     wire [2:0] branchOp;
     wire [1:0] aluOp;
-    wire [3:0] cstate;
     
     //aluContrl
     wire [3:0] aluCtl;
     
     //registerFile
     wire [31:0] readData1, readData2;
-
-    wire [31:0] regA, regB;
    
     //branchComparator
     wire branchOut; 
@@ -67,7 +50,8 @@ module processorWrapper(
     wire [31:0] regWriteData, dataAluMux;
     
     assign incPC = pc+4;
-    programCounter pcModule(
+    
+    programCounter pcm(
         .clk            (clk), 
         .rst            (rst),
         .pcSelect       (pcSelect),
@@ -77,15 +61,15 @@ module processorWrapper(
         .halt           (halt)
     );
 
-    instructionMemory instMem(
+    instructionMemory imem(
         .clk            (clk), 
         .readEnable     (iMemRead),
         .address        (pc),
         .instruction    (instruction)
     );
 
-    decoder decodeModule(
-        .instruction    (instruction),,
+    decoder dm(
+        .instruction    (instruction),
         .opCode         (opCode),
         .rs1            (rs1),
         .rs2            (rs2),
@@ -95,7 +79,7 @@ module processorWrapper(
         .imm            (imm)
     );
 
-    controlUnit controlModule(
+    controlUnit cm(
         .clk            (clk), 
         .rst            (rst),
         .funct3         (funct3),
@@ -119,8 +103,9 @@ module processorWrapper(
         .cstate         (cstate)
     );
     
-    aluControl ac(
+    aluControl alc(
         .aluOp          (aluOp),
+        .opCode         (opCode),
         .funct7         (funct7),
         .funct3         (funct3),
         .aluCtl         (aluCtl)
@@ -164,12 +149,11 @@ module processorWrapper(
         .writeByteSelect(dMemByteWrite),
         .loadSelect     (funct3),
         .address        (aluResult),
-        .dataIn         (readData2), // regB
+        .dataIn         (readData2), 
         .dataOut        (dMemOut)   
     );
     
     assign dataAluMux   = (aluOutDataSel) ? dMemOut : aluResult; // data or aluResult MUX   
-    assign regWriteData = (memPC) ? dataAluMux : incPC;
-    
+    assign regWriteData = (memPC) ? dataAluMux : incPC;   
 endmodule
 
