@@ -2,8 +2,6 @@
     .globl main
 
 main:
-    # Initialize values
-    addi x5, x0, 6           # x5 = 6, number to calculate factorial of
     addi x6, x0, 1           # x6 = 1, initial factorial result
 
 Factorial_loop:

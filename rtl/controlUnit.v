@@ -45,7 +45,8 @@ module controlUnit(
         case (currentState)
             S0: begin 
                 nextState = S1; iMemRead = 1; pcSelect = 2'b10;
-                dMemWrite = 0; dMemRead = 0; regWrite = 0;
+                dMemWrite = 0; dMemRead = 0; regWrite = 0; 
+                dMemByteRead = 4'b0000; dMemByteWrite = 4'b0000;
             end
             S1: begin
                 nextState = (opCode == `LOAD || opCode == `STORE) ? S2 : 
