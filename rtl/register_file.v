@@ -13,11 +13,11 @@ module registerFile (
 
     integer i;
     reg [31:0] cpu_registers [0:31]; 
-    
+
     always @(posedge clk or posedge rst) begin
         if (rst) begin   
-            for (i = 1; i <= 31; i = i + 1) begin
-                cpu_registers[i] <= 32'b0;
+            for (i = 0; i <= 31; i = i + 1) begin
+                cpu_registers[i] <= 32'h00000000;
             end
         end else if (writeEnable && writeReg != 0) begin
             cpu_registers[writeReg] <= writeData;

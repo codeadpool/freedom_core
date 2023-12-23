@@ -22,7 +22,7 @@ module processorWrapper(
     //controlUnit
     (* keep = "true" *) wire iMemRead; 
     (* keep = "true" *) wire [1:0] pcSelect;
-    (* keep = "true" *) wire memPC, regWrite, dMemWrite, aluSrcB, aluSrcA, aluOutDataSel;
+    (* keep = "true" *) wire memPC, regWrite, dMemRead, aluSrcB, aluSrcA, aluOutDataSel;
     (* keep = "true" *) wire [3:0] dMemByteWrite;
     (* keep = "true" *) wire [2:0] branchOp;
     (* keep = "true" *) wire [1:0] aluOp;
@@ -43,7 +43,7 @@ module processorWrapper(
     (* keep = "true" *) wire [31:0] aluResult;
     
     //dataMemory
-    (* keep = "true" *) wire [31:0] dMemOut, dExtOut; 
+    (* keep = "true" *) wire [31:0] dMemOut; 
 //    wire [15:0] sw, leds;
     
     (* keep = "true" *) wire [31:0] regWriteData, dataAluMux;
@@ -91,7 +91,7 @@ module processorWrapper(
         .pcSelect       (pcSelect),       
         .regWrite       (regWrite),
 
-        .dMemWrite      (dMemWrite),       
+        .dMemRead       (dMemRead),       
         .dMemByteWrite  (dMemByteWrite),
 
         .branchOp       (branchOp),
@@ -118,18 +118,19 @@ module processorWrapper(
         .readReg1       (rs1),
         .readReg2       (rs2),
         .writeReg       (rd),
-        .writeData      (regWriteData), 
+        .writeData      (regWriteData), // connected via mux
         .readData1      (readData1),
         .readData2      (readData2)
     );
     
     (* keep_hierarchy = "yes" *) branchComparator bc( 
-        .dataIn1        (readData1), 
+        .dataIn1        (readData1), // rega and regb
         .dataIn2        (readData2),
         .opCode         (branchOp),
         .branchOut      (branchOut)
     );
     
+//    (* mux_style = "select" *) assign aluDataIn1 = (aluSrcA) ? readData1 : pc;     // alu A mux
     mux ad1 (
         .select (aluSrcA),
         .in1(pc),
@@ -137,6 +138,7 @@ module processorWrapper(
         .muxOut(aluDataIn1) 
     );
     
+//    (* mux_style = "select" *) assign aluDataIn2 = (aluSrcB) ? imm  : readData2;   // alu B mux
     mux ad2 (
         .select (aluSrcB),
         .in1(readData2),
@@ -155,9 +157,10 @@ module processorWrapper(
         .clk            (clk),
         .rst            (rst),
 
-        .writeEnable     (dMemWrite),
+        .readEnable     (dMemRead),
         .writeByteSelect(dMemByteWrite),
 
+        .loadSelect     (funct3),
         .address        (aluResult),
         .dataIn         (readData2), 
         .dataOut        (dMemOut),
@@ -165,18 +168,14 @@ module processorWrapper(
         .leds           (leds)   
     );
     
-    (* keep_hierarchy = "yes" *) dataExtender de(
-        .dataIn         (dMemOut), 
-        .opCode         (funct3), 
-        .dataOut        (dExtOut) 
-    );
-    
+//    (* mux_style = "select" *) assign dataAluMux   = (aluOutDataSel) ? dMemOut : aluResult; // data or aluResult MUX       
     mux dam (
         .select (aluOutDataSel),
         .in1(aluResult),
-        .in2(dExtOut),
+        .in2(dMemOut),
         .muxOut(dataAluMux) 
     );
+//    (* mux_style = "select" *) assign regWriteData = (memPC) ? dataAluMux : incPC;
     
     mux rwd (
         .select (memPC),
@@ -185,6 +184,4 @@ module processorWrapper(
         .muxOut(regWriteData) 
     );   
 endmodule
-
-
 

@@ -9,7 +9,7 @@ module dataMemory(
     input [31:0] address,
     input [31:0] dataIn,
     output [31:0] dataOut,
-    input  [15:0] sw,
+    input [15:0] sw,
     output reg [15:0] leds
 );
 
@@ -34,15 +34,13 @@ module dataMemory(
     
     wire [31:0] translAddress = (address - BASE_ADDR) >> 2;
     
-    reg [31:0] switches, dataOutTemp, dataFromSwitches;
-      
+    reg [31:0] switches, dataOutTemp;
+    assign dataOut = dataOutTemp;
+    
     wire [1:0] currentBlock;
     assign currentBlock = (address >= BASE_ADDR && address < BASE_ADDR + (MEM_SIZE << 2)) ? DATA_MEMORY_BLOCK :
                           (address == ADDR_SW) ? SWITCH_BLOCK :
                           (address == ADDR_LEDS) ? LED_BLOCK : INVALID_BLOCK;
-                          
-    assign dataOut = (currentBlock == DATA_MEMORY_BLOCK) ? dataOutTemp : 
-                        (currentBlock == SWITCH_BLOCK) ? dataFromSwitches : 32'b0;
     
     initial begin
         specialRom[0] = SURYA;
@@ -52,28 +50,39 @@ module dataMemory(
     end
 
     always @(posedge clk) begin
-       switches <= sw;
-        if (rst) begin
-            
-        end else if (writeEnable && currentBlock == DATA_MEMORY_BLOCK) begin            
+        switches <= sw;
+        if (rst) begin  
+        end 
+        else if (writeEnable && currentBlock == DATA_MEMORY_BLOCK) begin            
             case (writeByteSelect)
                 4'b0001: dataMemory[translAddress] <= (dataIn & 32'h000000FF);
                 4'b0011: dataMemory[translAddress] <= (dataIn & 32'h0000FFFF);
                 4'b1111: dataMemory[translAddress] <= dataIn;
                 default: dataMemory[translAddress] <= dataIn; // Default case
             endcase
-        end else if (currentBlock == DATA_MEMORY_BLOCK) begin
+        end 
+
+        else if (currentBlock == DATA_MEMORY_BLOCK) begin
             dataOutTemp <= dataMemory[translAddress];
         end
+
+        else if (currentBlock == SWITCH_BLOCK) begin
+            dataOutTemp <= switches;
+        end 
     end
 
     always @(*) begin
         if (currentBlock == LED_BLOCK && writeEnable) begin
             leds <= dataIn[15:0];
         end
-        else if (currentBlock == SWITCH_BLOCK) begin
-            dataFromSwitches <= switches;
-        end 
+        // else if (currentBlock == SWITCH_BLOCK) begin
+        //     dataOutTemp <= switches;
+        // end 
     end
 endmodule
+
+
+
+
+
 

@@ -25,7 +25,7 @@ module programCounter(
                 default: pc = pc;// 32'hdeadbeef
             endcase
             // Halt Conditions
-            halt <= (pc[1:0] !== 2'b00) || (pc > UPPER_ADDRESS_LIMIT || pc < START_ADDRESS);
+            halt <= (pc[1:0] != 2'b00) || (pc > UPPER_ADDRESS_LIMIT || pc < START_ADDRESS);
         end
     end
 endmodule

@@ -1,10 +1,8 @@
 `timescale 1ns / 1ps
 module tb_processorWrapper;
     reg clk, rst;
-    wire [31:0] pc;
-    wire [31:0] instruction;
-    wire [3:0] cstate;
-    
+    reg [15:0] sw;
+    wire [15:0] leds;
     reg [63:0] plainText;
     reg [63:0] cipherText;
     reg [4:0] factorialOf;
@@ -12,9 +10,8 @@ module tb_processorWrapper;
     processorWrapper DUT(
         .clk(clk),
         .rst(rst),
-        .pc(pc),
-        .instruction(instruction),
-        .cstate(cstate)
+        .sw(sw),
+        .leds(leds)
     );   
     
     always #5 clk = ~clk;
@@ -22,15 +19,16 @@ module tb_processorWrapper;
     initial begin    
         clk = 0;
         rst = 1;
-        #10 rst = 0;       
+        #10 rst = 0;  
+//        #10 synthesisFactorial();     
 //        #10 factorial();
 //        #10 rc5();
         #10 rc5Decrypt();
         
     end
     
-    //  ************************        TEST TASKS      ************************  
-      
+    //  ************************        TEST TASKS      ************************   
+     
     task everyInstruction();
         begin
         $readmemh("defaultInstructionSet.mem", DUT.imem.memory_array);
@@ -43,7 +41,8 @@ module tb_processorWrapper;
             $readmemh("rc5InstructionSet.mem", DUT.imem.memory_array);
             $readmemh("rc5DMemSet.mem",DUT.dmem.dataMemory);
             
-            plainText = 64'h0101010101010101;
+//            plainText = 64'h01010101_01010101;
+            plainText = 64'h00000000_00000000;
             DUT.rf.cpu_registers[1] = plainText[63:32];
             DUT.rf.cpu_registers[2] = plainText[31:0];
            
@@ -64,7 +63,8 @@ module tb_processorWrapper;
             $readmemh("rc5Decrypt.mem", DUT.imem.memory_array);
             $readmemh("rc5DMemSet.mem",DUT.dmem.dataMemory);
             
-            cipherText = 64'hca8f69586d786f53;
+//            cipherText = 64'hca8f6958_6d786f53;
+            cipherText = 64'ha2b568ba_c7edc2c1;
             DUT.rf.cpu_registers[1] = cipherText[63:32];
             DUT.rf.cpu_registers[2] = cipherText[31:0];
             
@@ -95,6 +95,17 @@ module tb_processorWrapper;
             $display("**********        RESULT      **********");     
             $display("factorial of %d is: %d", factorialOf, DUT.rf.cpu_registers[6]);
                 
+            $stop;
+        end
+    endtask
+    
+    task synthesisFactorial();
+        begin
+            DUT.dmem.switches = 16'h0005;
+            while (DUT.cm.cstate != 4'b1110) begin
+                    @(posedge clk);
+                end
+            $display("factorial of 5 is: %d", DUT.rf.cpu_registers[6]);
             $stop;
         end
     endtask

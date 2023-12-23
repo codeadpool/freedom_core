@@ -11,8 +11,6 @@ module controlUnit(
     output reg memPC,
     output reg regWrite, 
     output reg dMemRead,
-    output reg dMemWrite, 
-    output reg [3:0] dMemByteRead,
     output reg [3:0] dMemByteWrite,
     output reg [2:0] branchOp,
     output reg aluSrcB,
@@ -42,8 +40,8 @@ module controlUnit(
         case (currentState)
             S0: begin 
                 nextState = S1; iMemRead = 1; pcSelect = 2'b10;
-                dMemWrite = 0; dMemRead = 0; regWrite = 0; 
-                dMemByteRead = 4'b0000; dMemByteWrite = 4'b0000;
+                regWrite = 0; 
+                dMemByteWrite = 4'b0000;
             end
             S1: begin
                 nextState = (opCode == `LOAD || opCode == `STORE) ? S2 : 
@@ -59,13 +57,13 @@ module controlUnit(
                 nextState = (opCode == `LOAD) ? S3 : (opCode == `STORE) ? S5 : S0;
             end
             S3: begin
-                dMemRead = 1; dMemByteRead = 4'b1111; aluOutDataSel = 1; nextState = S4;
+                dMemRead = 1; aluOutDataSel = 1; nextState = S4;
             end
             S4: begin
                 regWrite = 1; memPC = 1; pcSelect = 2'b01; nextState = S0;
             end
             S5: begin
-                dMemWrite = 1; dMemByteWrite = 4'b1111; pcSelect = 2'b01; nextState = S0;
+                dMemRead= 0; dMemByteWrite = 4'b1111; pcSelect = 2'b01; nextState = S0;
             end
             S6: begin
                 aluSrcA = 1; aluOp = 2'b10; aluSrcB = (opCode == `ART) ? 0 : 1; nextState = S7;
@@ -96,7 +94,7 @@ module controlUnit(
             end
             S15: begin
                 iMemRead = 0; pcSelect = 2'b10; memPC = 0; regWrite = 0;
-                dMemRead = 0; dMemWrite = 0; branchOp = 3'b000; aluSrcB = 0;
+                dMemRead = 1; branchOp = 3'b000; aluSrcB = 0;
                 aluSrcA = 0; aluOp = 2'b00; aluOutDataSel = 0;
                 nextState = S0;
             end
