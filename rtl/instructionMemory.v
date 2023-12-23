@@ -1,5 +1,4 @@
 `timescale 1ns / 1ps
-
 module instructionMemory(
     input wire clk, readEnable,
     input wire [31:0] address,
@@ -11,8 +10,10 @@ module instructionMemory(
     localparam ADDR_WIDTH = $clog2(MEM_SIZE);
     localparam NOP_INSTRUCTION = 32'h11111111; // NOP instruction
      
-    reg [31:0] memory_array [0:MEM_SIZE-1];
-  
+    (* ram_style = "block" *) reg [31:0] memory_array [0:MEM_SIZE-1];
+
+    initial $readmemh("factorialInstructionSet.mem", memory_array);
+    
     always @(posedge clk) begin
         if (readEnable) begin
             if ((address >= BASE_ADDRESS) && (address < BASE_ADDRESS + (MEM_SIZE << 2)) && (address[1:0] == 0)) begin
