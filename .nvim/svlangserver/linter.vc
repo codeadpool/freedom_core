@@ -1,0 +1,9 @@
+-v /home/shadow-monarch/projects/freedom_core/uvm/fc_pkg.sv
++incdir+/home/shadow-monarch/projects/freedom_core/dv
++incdir+/home/shadow-monarch/projects/freedom_core/rtl
++incdir+/home/shadow-monarch/projects/freedom_core/temp
++incdir+/home/shadow-monarch/projects/freedom_core/uvm
++incdir+/home/shadow-monarch/projects/freedom_core/dv
++incdir+/home/shadow-monarch/projects/freedom_core/rtl
++incdir+/home/shadow-monarch/projects/freedom_core/temp
++incdir+/home/shadow-monarch/projects/freedom_core/uvm
